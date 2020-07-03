@@ -137,14 +137,14 @@ public class GLM extends ModelBuilder<GLMModel,GLMParameters,GLMOutput> {
   @Override
   public void cv_computeAndSetOptimalParameters(ModelBuilder[] cvModelBuilders) { // fix this so that it will work with both alpha and lambda array
     if(_parms._max_runtime_secs != 0) _parms._max_runtime_secs = 0;
-    if(_parms._lambda_search) { // xval_test_deviances/sd are per each set of alpha/lambda value
+//    if(_parms._lambda_search) { // xval_test_deviances/sd are per each set of alpha/lambda value
       _xval_test_deviances = new double[_parms._lambda.length*_parms._alpha.length];
       _xval_test_sd = new double [_parms._lambda.length*_parms._alpha.length];
       double bestTestDev = Double.POSITIVE_INFINITY;
       int lmin_max = 0;
-      for (int i = 0; i < cvModelBuilders.length; ++i) {  // loop through all cv models
+      for (int i = 0; i < cvModelBuilders.length; ++i) {  // find the highest best_submodel_idx we need to go through
         GLM g = (GLM) cvModelBuilders[i];
-        lmin_max = Math.max(lmin_max,g._model._output._best_lambda_idx);
+        lmin_max = Math.max(lmin_max,g._model._output._best_submodel_idx);
       }
       int lidx = 0; // index into _lambda array
       int bestId = 0;
@@ -156,12 +156,12 @@ public class GLM extends ModelBuilder<GLMModel,GLMParameters,GLMOutput> {
           double x = _parms._lambda[lidx];
           if (g._model._output.getSubmodel(x) == null)
             g._driver.computeSubmodel(lidx, x);
-          testDev += g._model._output.getSubmodel(x).devianceTest;
+          testDev += g._model._output.getSubmodel(x).devianceTest;  // accumulate 
         }
-        double testDevAvg = testDev / cvModelBuilders.length;
+        double testDevAvg = testDev / cvModelBuilders.length; // average testDevAvg for fixed submodel index
         double testDevSE = 0;
         // compute deviance standard error
-        for (int i = 0; i < cvModelBuilders.length; ++i) {
+        for (int i = 0; i < cvModelBuilders.length; ++i) { // calculate testDevAvg square over all xval models
           GLM g = (GLM) cvModelBuilders[i];
           double x = _parms._lambda[lidx];
           if (g._model._output.getSubmodel(x) == null)
@@ -201,8 +201,8 @@ public class GLM extends ModelBuilder<GLMModel,GLMParameters,GLMOutput> {
         --bestId1se;
       _lambdaCVEstimate = _parms._lambda[bestId];
       _model._output._lambda_1se = bestId1se;
-      _model._output._best_lambda_idx = bestId;
-    }
+      _model._output._best_submodel_idx = bestId;
+// }
     for (int i = 0; i < cvModelBuilders.length; ++i) {
       GLM g = (GLM) cvModelBuilders[i];
       GLMModel gm = g._model;
