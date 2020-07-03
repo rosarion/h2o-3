@@ -41,7 +41,7 @@ test.CoxPH.predict <- function() {
     hex.lp.3 <- pred(hex.fit.3, tstdata.hex.3)
 
     expect_equal(fit.3$linear.predictors, hex.lp.3, scale = 1, tolerance = 1e-3)
-    
+
     # Case 4: only numeric, same weights
     tstdata.4 <- cancer
     tstdata.4$weights <- rep(0.123, nrow(tstdata.4))
@@ -57,7 +57,7 @@ test.CoxPH.predict <- function() {
 
     expect_equal(fit.4$linear.predictors, hex.lp.4, scale = 1, tolerance = 1e-3)
     expect_equal(fit.3$linear.predictors, hex.lp.4, scale = 1, tolerance = 1e-3)
-    
+
     # Case 5: only numeric, random weights
     tstdata.5 <- cancer
     tstdata.5$weights <- runif(nrow(tstdata.5), min=0.01, max=2.0)
@@ -93,6 +93,19 @@ test.CoxPH.predict <- function() {
     hex.lp.7 <- pred(hex.fit.7, tstdata.hex.7)
 
     expect_equal(fit.7$linear.predictors, hex.lp.7, scale = 1, tolerance = 1e-3)
+    
+    # Case 8: categoricals, numeric... no weights... and breslow... and strata
+    tstdata.8 <- cancer
+    tstdata.8$sex <- as.factor(tstdata.8$sex)
+    tstdata.8$weights <- runif(nrow(tstdata.8), min=0.01, max=9.0)
+    tstdata.hex.8 <- as.h2o(tstdata.8)
+    fit.8 <- coxph(Surv(time, status) ~ age + strata(sex) + meal.cal + age:meal.cal, data = tstdata.8, ties = "breslow")
+    hex.fit.8 <- h2o.coxph(x = c("age", "sex", "meal.cal"), interaction_pairs = list(c("age", "meal.cal")),
+                           event_column = "status",
+                           stratify_by = "sex", stop_column = "time", ties = "breslow", training_frame = tstdata.hex.8)
+    hex.lp.8 <- pred(hex.fit.8, tstdata.hex.8)
+
+    expect_equal(fit.8$linear.predictors, hex.lp.8, scale = 1, tolerance = 1e-3)
 }
 
 doTest("CoxPH: Predict Test", test.CoxPH.predict)
