@@ -1286,15 +1286,19 @@ public class GLMModel extends Model<GLMModel,GLMModel.GLMParameters,GLMModel.GLM
       // use trainDev if that is all that is available
       boolean foundBetterDev = false;
       double bestValue = bestDevValue;
-      if (!Double.isNaN(testDev) && (testDev < bestDevValue)) {
+      if (!Double.isNaN(testDev) && (testDev < bestDevValue)) { // use validation metrics
         foundBetterDev = true;
         bestValue = testDev;
-      } else if ((xval_test_deviances != null) && (xval_test_deviances[submodelIdx] < bestDevValue)) {
-        foundBetterDev = true;
-        bestValue = xval_test_deviances[submodelIdx];
-      } else if (trainDev < bestDevValue){ // use trainDev now
-        foundBetterDev = true;
-        bestValue = trainDev;
+      } else if (xval_test_deviances != null) { // use xval metrics here
+        if ((xval_test_deviances.length > submodelIdx) && (xval_test_deviances[submodelIdx] < bestDevValue)) {
+          foundBetterDev = true;
+          bestValue = xval_test_deviances[submodelIdx];
+        } 
+      } else {   // use training metrics here
+        if (trainDev < bestDevValue) { // use trainDev now
+          foundBetterDev = true;
+          bestValue = trainDev;
+        }
       }
       if (foundBetterDev) {
         if (setAlphaLambdaIdx) {

@@ -2086,8 +2086,11 @@ public class GLM extends ModelBuilder<GLMModel,GLMParameters,GLMOutput> {
                       : new GLMResDevTask(_job._key, _validDinfo, _parms, _dinfo.denormalizeBeta(_state.beta())).doAll(_validDinfo._adaptedFrame).avgDev();
           }
           Log.info(LogMsg("train deviance = " + trainDev + ", test deviance = " + testDev));
-          double xvalDev = _xval_test_deviances == null ? Double.NaN : _xval_test_deviances[i];
-          double xvalDevSE = _xval_test_sd == null ? Double.NaN : _xval_test_sd[i];
+          if ((_xval_test_deviances != null) && (_xval_test_deviances.length <= i) && _valid == null) // only runs in main model of xval
+            _xval_done = true;
+
+          double xvalDev = ((_xval_test_deviances == null) || (_xval_test_deviances.length <= i)) ? Double.NaN : _xval_test_deviances[i];
+          double xvalDevSE = ((_xval_test_sd == null) || (_xval_test_deviances.length <= i)) ? Double.NaN : _xval_test_sd[i];
           _lsc.addLambdaScore(_state._iter, ArrayUtils.countNonzeros(_state.beta()), _state.lambda(), trainDev, testDev, xvalDev, xvalDevSE); // add to scoring history
           _model.updateSubmodel(sm = new Submodel(_state.lambda(), _state.alpha(), _state.beta(), _state._iter, trainDev, testDev));
         }
@@ -2121,6 +2124,8 @@ public class GLM extends ModelBuilder<GLMModel,GLMParameters,GLMOutput> {
 
     private transient double _nullDevTrain = Double.NaN;
     private transient double _nullDevTest = Double.NaN;
+    boolean _xval_done = false; // if cross-validation is enabled without test data, best submodel index already found
+
     @Override
     public void computeImpl() {
       if(_doInit)
@@ -2242,7 +2247,11 @@ public class GLM extends ModelBuilder<GLMModel,GLMParameters,GLMOutput> {
                   lambdaFormatter.format(_state.lambda()) + " alpha=" + lambdaFormatter.format(_state.alpha())+ 
                   "deviance trn/tst= " + devFormatter.format(trainDev) + "/" + devFormatter.format(testDev) + 
                   " P=" + ArrayUtils.countNonzeros(_state.beta()));
+          if (_xval_done) // only true with cross-validation and no test dataset
+            break;
         }
+        if (_xval_done)
+          break;
       }
       
       if (stop_requested()) {
