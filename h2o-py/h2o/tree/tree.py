@@ -87,6 +87,8 @@ class H2OTree(object):
         self._nas = response['nas']
         self._predictions = response['predictions']
         self._root_node = self.__assemble_tree(0)
+        self._language_tree_representation = response['language_tree_representation']
+        self._language_path_representations = response['language_path_representations']
 
     @property
     def left_children(self):
@@ -362,6 +364,15 @@ class H2OTree(object):
         >>> tree.predictions
         """
         return self._predictions
+
+    @property
+    def language_tree_representation(self):
+        return self._language_tree_representation
+
+    @property
+    def language_path_representations(self):
+        return self._language_path_representations
+
 
     def __convert_threshold_nans(self, thresholds):
         for i in range(0, len(thresholds)):
